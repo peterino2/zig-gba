@@ -1,11 +1,13 @@
 const ops = @import("ops.zig");
 const bios = @import("bios.zig");
 const root = @import("root");
+const std = @import("std");
 
 comptime {
     _ = @import("header.zig"); // This forces header.zig to be imported
     if (!@hasDecl(root, "_start")) {
-        @export(_start, .{ .name = "_start", .section = ".gbamain" });
+        // @export(_start, .{ .name = "_start", .section = ".gbamain" });
+
     }
 }
 
@@ -18,7 +20,7 @@ extern var __data_end__: u8;
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //fn _start() callconv(.Naked) noreturn {
-fn _start() callconv(.C) noreturn {
+export fn _start() linksection(".gbamain") callconv(.C) noreturn {
     // Assembly init code
     asm volatile (
         \\.arm
@@ -36,21 +38,24 @@ fn _start() callconv(.C) noreturn {
         \\bx r0
     );
 
-    bios.registerRamReset(bios.RamResetFlags.All);
+    // bios.registerRamResetAll();
+    // bios.registerRamReset(bios.RamResetFlags.All);
 
     // Clear .bss
     const bss_ptr: [*]u8 = @ptrCast(&__bss_start__);
     const bss_len = @intFromPtr(&__bss_end__) - @intFromPtr(&__bss_start__);
-    @memset(bss_ptr[0 .. bss_len], 0);
+    @memset(bss_ptr[0..bss_len], 0);
 
     // Copy .data section to EWRAM
     const data_ptr: [*]u8 = @ptrCast(&__data_start__);
     const data_lma_ptr: [*]u8 = @ptrCast(&__data_lma);
     const data_len = @intFromPtr(&__data_end__) - @intFromPtr(&__data_start__);
-    @memcpy(data_ptr[0 .. data_len], data_lma_ptr);
+    @memcpy(data_ptr[0..data_len], data_lma_ptr);
 
     if (@typeInfo(@TypeOf(root.main)).Fn.return_type != noreturn)
         @compileError("expected return type of main to be 'noreturn'");
 
     @call(.always_inline, root.main, .{});
+    //
+    while (true) {}
 }

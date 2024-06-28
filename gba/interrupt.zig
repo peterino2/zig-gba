@@ -1,34 +1,34 @@
 const mem = @import("mem.zig");
 
-pub const vblank          : u16 = 0x0001;
-pub const hblank          : u16 = 0x0002;
-pub const vcounter        : u16 = 0x0004;
-pub const timer0_overflow : u16 = 0x0008;
-pub const timer1_overflow : u16 = 0x0010;
-pub const timer2_overflow : u16 = 0x0020;
-pub const timer3_overflow : u16 = 0x0040;
-pub const serial_com      : u16 = 0x0080;
-pub const dma0            : u16 = 0x0100;
-pub const dma1            : u16 = 0x0200;
-pub const dma2            : u16 = 0x0400;
-pub const dma3            : u16 = 0x0800;
-pub const keypad          : u16 = 0x1000;
-pub const game_pak        : u16 = 0x2000;
+pub const vblank: u16 = 0x0001;
+pub const hblank: u16 = 0x0002;
+pub const vcounter: u16 = 0x0004;
+pub const timer0_overflow: u16 = 0x0008;
+pub const timer1_overflow: u16 = 0x0010;
+pub const timer2_overflow: u16 = 0x0020;
+pub const timer3_overflow: u16 = 0x0040;
+pub const serial_com: u16 = 0x0080;
+pub const dma0: u16 = 0x0100;
+pub const dma1: u16 = 0x0200;
+pub const dma2: u16 = 0x0400;
+pub const dma3: u16 = 0x0800;
+pub const keypad: u16 = 0x1000;
+pub const game_pak: u16 = 0x2000;
 
 pub const count = 15;
 
-const InterruptTableEntry = packed struct {
-    handler: fn() void,
+const InterruptTableEntry = extern struct {
+    handler: *const fn () callconv(.Naked) void,
     mask: u32,
 };
 
 export var interrupt_table: [count]InterruptTableEntry = undefined;
 
-fn defaultInterruptHandler() void { }
+fn defaultInterruptHandler() callconv(.Naked) void {}
 
 pub fn init() void {
-    for (interrupt_table) |*entry| {
-        entry.* = .{
+    for (interrupt_table, 0..) |_, i| {
+        interrupt_table[i] = .{
             .handler = defaultInterruptHandler,
             .mask = 0,
         };
@@ -36,10 +36,13 @@ pub fn init() void {
     mem.reg_ime.* = 0;
     mem.reg_interrupt.* = interruptHandler;
     //mem.reg_dispstat.* |= .{ .vblank_irq
-    //    
+    //
     //};
 }
 
+comptime {
+    @export(interruptHandler, .{ .name = "interruptHandler" });
+}
 
 // NOTE: this is ARM 32-bit code instead of thumb
 pub fn interruptHandler() callconv(.Naked) void {

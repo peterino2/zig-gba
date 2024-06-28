@@ -45,11 +45,7 @@ pub fn memcpy16(noalias destination: anytype, noalias source: anytype, count: us
     if (count < 2) {
         genericMemcpy(@ptrCast(destination), @ptrCast(source), count);
     } else {
-        if ((@intFromPtr(destination) % 2) == 0 and (@intFromPtr(source) % 2) == 0) {
-            alignedMemcpy(u16, destination, source, count);
-        } else {
-            genericMemcpy(@ptrCast(destination), @ptrCast(source), count);
-        }
+        genericMemcpy(@ptrCast(destination), @ptrCast(source), count);
     }
 }
 

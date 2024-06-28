@@ -24,21 +24,29 @@ pub const RamResetFlags = packed struct(u8) {
     };
 };
 
-fn getSystemCallAssemblyCode(comptime call: u8) callconv(.Inline) []const u8 {
+inline fn getSystemCallAssemblyCode(comptime call: u8) []const u8 {
     var buffer: [64]u8 = undefined;
     return std.fmt.bufPrint(buffer[0..], "swi {}", .{call}) catch unreachable;
 }
 
-pub fn systemCall1(comptime call: u8, param0: u32) callconv(.Inline) void {
+pub inline fn systemCall1(comptime call: u8, param0: u32) void {
     const assembly = comptime getSystemCallAssemblyCode(call);
 
     asm volatile (assembly
         :
-        : [param0] "{r0}" (param0)
+        : [param0] "{r0}" (param0),
         : "r0"
     );
 }
 
-pub fn registerRamReset(flags: RamResetFlags) callconv(.Inline) void {
+pub inline fn registerRamReset(flags: RamResetFlags) void {
     systemCall1(0x01, @as(u8, @bitCast(flags)));
+}
+
+pub inline fn registerRamResetAll() void {
+    asm volatile (
+        \\.arm
+        \\mov r0, #255
+        \\swi 0x01
+    );
 }

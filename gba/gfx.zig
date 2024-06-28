@@ -39,7 +39,7 @@ pub const DisplayControl = packed struct {
     showObjWindow: Visiblity = .hide,
 };
 
-pub const Enabled =  enum(u1) {
+pub const Enabled = enum(u1) {
     disabled,
     enabled,
 };
@@ -61,4 +61,9 @@ pub fn toRgb16(red: u5, green: u5, blue: u5) u16 {
 
 pub fn pixelIndex(x: u8, y: u8) u16 {
     return @as(u16, y) * width + x;
+}
+
+pub fn vsync() void {
+    while (mem.reg_vcount.* >= 160) {} // wait till VDraw
+    while (mem.reg_vcount.* < 160) {} // wait till VBlank
 }

@@ -12,9 +12,9 @@ pub fn build(b: *Build) void {
     const gba_target = b.resolveTargetQuery(gbabuild.target_query);
 
     _ = addGbaExe(b, gba_target, optimize, gba_mod, "hi");
-    //_ = addGbaExe(b, gba_target, optimize, gba_mod, "display");
+    _ = addGbaExe(b, gba_target, optimize, gba_mod, "display");
     //_ = addGbaExe(b, gba_target, optimize, gba_mod, "pong");
-    //_ = addGbaExe(b, gba_target, optimize, gba_mod, "pongbetter");
+    _ = addGbaExe(b, gba_target, optimize, gba_mod, "pongbetter");
 }
 
 fn addGbaExe(
@@ -32,6 +32,15 @@ fn addGbaExe(
     });
     exe.root_module.addImport("gba", gba_mod);
     exe.setLinkerScriptPath(b.path("gba.ld"));
+
+    const objcopy_step = exe.addObjCopy(.{
+        .format = .bin,
+    });
+
+    const install_bin_step = b.addInstallBinFile(objcopy_step.getOutputSource(), b.fmt("{s}.gba", .{name}));
+    install_bin_step.step.dependOn(&objcopy_step.step);
+
+    b.default_step.dependOn(&install_bin_step.step);
 
     b.installArtifact(exe);
     //exe.installRaw(name ++ ".gba");
