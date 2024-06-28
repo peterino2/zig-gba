@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const RamResetFlags = packed struct {
+pub const RamResetFlags = packed struct(u8) {
     clearEwRam: bool = false,
     clearIwram: bool = false,
     clearPalette: bool = false,
@@ -40,5 +40,5 @@ pub fn systemCall1(comptime call: u8, param0: u32) callconv(.Inline) void {
 }
 
 pub fn registerRamReset(flags: RamResetFlags) callconv(.Inline) void {
-    systemCall1(0x01, @bitCast(u8, flags));
+    systemCall1(0x01, @as(u8, @bitCast(flags)));
 }

@@ -16,7 +16,9 @@ extern var __data_lma: u8;
 extern var __data_start__: u8;
 extern var __data_end__: u8;
 
-fn _start() callconv(.Naked) noreturn {
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//fn _start() callconv(.Naked) noreturn {
+fn _start() callconv(.C) noreturn {
     // Assembly init code
     asm volatile (
         \\.arm
@@ -37,13 +39,18 @@ fn _start() callconv(.Naked) noreturn {
     bios.registerRamReset(bios.RamResetFlags.All);
 
     // Clear .bss
-    ops.memset32(@ptrCast([*]volatile u8, &__bss_start__), 0, @ptrToInt(&__bss_end__) - @ptrToInt(&__bss_start__));
+    const bss_ptr: [*]u8 = @ptrCast(&__bss_start__);
+    const bss_len = @intFromPtr(&__bss_end__) - @intFromPtr(&__bss_start__);
+    @memset(bss_ptr[0 .. bss_len], 0);
 
     // Copy .data section to EWRAM
-    ops.memcpy32(@ptrCast([*]volatile u8, &__data_start__), @ptrCast([*]const u8, &__data_lma), @ptrToInt(&__data_end__) - @ptrToInt(&__data_start__));
+    const data_ptr: [*]u8 = @ptrCast(&__data_start__);
+    const data_lma_ptr: [*]u8 = @ptrCast(&__data_lma);
+    const data_len = @intFromPtr(&__data_end__) - @intFromPtr(&__data_start__);
+    @memcpy(data_ptr[0 .. data_len], data_lma_ptr);
 
     if (@typeInfo(@TypeOf(root.main)).Fn.return_type != noreturn)
         @compileError("expected return type of main to be 'noreturn'");
 
-    @call(.{ .modifier = .always_inline }, root.main, .{});
+    @call(.always_inline, root.main, .{});
 }

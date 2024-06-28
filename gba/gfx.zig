@@ -60,5 +60,5 @@ pub fn toRgb16(red: u5, green: u5, blue: u5) u16 {
 }
 
 pub fn pixelIndex(x: u8, y: u8) u16 {
-    return @intCast(u16, y) * width + x;
+    return @as(u16, y) * width + x;
 }

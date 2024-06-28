@@ -1,6 +1,6 @@
 pub fn genericMemset(comptime T: type, destination: [*]volatile u8, value: T, count: usize) void {
     @setRuntimeSafety(false);
-    const valueBytes = @ptrCast([*]const u8, &value);
+    const valueBytes: [*]const u8 = @ptrCast(&value);
     var index: usize = 0;
     while (index != count) : (index += 1) {
         comptime var expandIndex = 0;
@@ -12,7 +12,7 @@ pub fn genericMemset(comptime T: type, destination: [*]volatile u8, value: T, co
 
 pub fn alignedMemset(comptime T: type, destination: [*]align(@alignOf(T)) volatile u8, value: T, count: usize) void {
     @setRuntimeSafety(false);
-    const alignedDestination = @ptrCast([*]volatile T, destination);
+    const alignedDestination: [*]volatile T = @ptrCast(destination);
     var index: usize = 0;
     while (index != count) : (index += 1) {
         alignedDestination[index] = value;
@@ -20,35 +20,35 @@ pub fn alignedMemset(comptime T: type, destination: [*]align(@alignOf(T)) volati
 }
 
 pub fn memset32(destination: anytype, value: u32, count: usize) void {
-    if ((@ptrToInt(@ptrCast(*u8, destination)) % 4) == 0) {
-        alignedMemset(u32, @ptrCast([*]align(4) volatile u8, @alignCast(4, destination)), value, count);
+    if ((@intFromPtr(destination) % 4) == 0) {
+        alignedMemset(u32, destination, value, count);
     } else {
-        genericMemset(u32, @ptrCast([*]volatile u8, destination), value, count);
+        genericMemset(u32, @ptrCast(destination), value, count);
     }
 }
 
 pub fn memcpy32(noalias destination: anytype, noalias source: anytype, count: usize) void {
     if (count < 4) {
-        genericMemcpy(@ptrCast([*]u8, destination), @ptrCast([*]const u8, source), count);
+        genericMemcpy(@ptrCast(destination), @ptrCast(source), count);
     } else {
-        if ((@ptrToInt(@ptrCast(*u8, destination)) % 4) == 0 and (@ptrToInt(@ptrCast(*const u8, source)) % 4) == 0) {
-            alignedMemcpy(u32, @ptrCast([*]align(4) volatile u8, @alignCast(4, destination)), @ptrCast([*]align(4) const u8, @alignCast(4, source)), count);
-        } else if ((@ptrToInt(@ptrCast(*u8, destination)) % 2) == 0 and (@ptrToInt(@ptrCast(*const u8, source)) % 2) == 0) {
-            alignedMemcpy(u16, @ptrCast([*]align(2) volatile u8, @alignCast(2, destination)), @ptrCast([*]align(2) const u8, @alignCast(2, source)), count);
+        if ((@intFromPtr(destination) % 4) == 0 and (@intFromPtr(source) % 4) == 0) {
+            alignedMemcpy(u32, @ptrCast(@alignCast(destination)), @ptrCast(@alignCast(source)), count);
+        } else if ((@intFromPtr(destination) % 2) == 0 and (@intFromPtr(source) % 2) == 0) {
+            alignedMemcpy(u16, destination, source, count);
         } else {
-            genericMemcpy(@ptrCast([*]volatile u8, destination), @ptrCast([*]const u8, source), count);
+            genericMemcpy(@ptrCast(destination), @ptrCast(source), count);
         }
     }
 }
 
 pub fn memcpy16(noalias destination: anytype, noalias source: anytype, count: usize) void {
     if (count < 2) {
-        genericMemcpy(@ptrCast([*]u8, destination), @ptrCast([*]const u8, source), count);
+        genericMemcpy(@ptrCast(destination), @ptrCast(source), count);
     } else {
-        if ((@ptrToInt(@ptrCast(*u8, destination)) % 2) == 0 and (@ptrToInt(@ptrCast(*const u8, source)) % 2) == 0) {
-            alignedMemcpy(u16, @ptrCast([*]align(2) volatile u8, @alignCast(2, destination)), @ptrCast([*]align(2) const u8, @alignCast(2, source)), count);
+        if ((@intFromPtr(destination) % 2) == 0 and (@intFromPtr(source) % 2) == 0) {
+            alignedMemcpy(u16, destination, source, count);
         } else {
-            genericMemcpy(@ptrCast([*]volatile u8, destination), @ptrCast([*]const u8, source), count);
+            genericMemcpy(@ptrCast(destination), @ptrCast(source), count);
         }
     }
 }
@@ -58,8 +58,8 @@ pub fn alignedMemcpy(comptime T: type, noalias destination: [*]align(@alignOf(T)
     const alignSize = count / @sizeOf(T);
     const remainderSize = count % @sizeOf(T);
 
-    const alignDestination = @ptrCast([*]volatile T, destination);
-    const alignSource = @ptrCast([*]const T, source);
+    const alignDestination: [*]volatile T = @ptrCast(destination);
+    const alignSource: [*]const T = @ptrCast(source);
 
     var index: usize = 0;
     while (index != alignSize) : (index += 1) {

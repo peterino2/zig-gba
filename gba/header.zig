@@ -9,19 +9,19 @@ const root = @import("root");
 //    @export(root.gbaheader, .{ .name = "__gbaheader__", .section = ".gbaheader" });
 //}
 
-pub const Header = packed struct {
-    romEntryPoint: u32,
-    nintendoLogo: [156]u8,
-    gameName: [12]u8,
-    gameCode: [4]u8,
-    makerCode: [2]u8,
-    fixedValue: u8,
-    mainUnitCode: u8,
-    deviceType: u8,
-    reservedArea: [7]u8,
-    softwareVersion: u8,
-    complementCheck: u8,
-    reservedArea2: [2]u8,
+pub const Header = extern struct {
+    romEntryPoint: u32 align(1),
+    nintendoLogo: [156]u8 align(1),
+    gameName: [12]u8 align(1),
+    gameCode: [4]u8 align(1),
+    makerCode: [2]u8 align(1),
+    fixedValue: u8 align(1),
+    mainUnitCode: u8 align(1),
+    deviceType: u8 align(1),
+    reservedArea: [7]u8 align(1),
+    softwareVersion: u8 align(1),
+    complementCheck: u8 align(1),
+    reservedArea2: [2]u8 align(1),
 
     pub fn init(comptime gameName: []const u8, comptime gameCode: []const u8, comptime makerCode: ?[]const u8, comptime softwareVersion: ?u8) Header {
         var header = Header{
@@ -55,8 +55,8 @@ pub const Header = packed struct {
             const isUpper = @import("std").ascii.isUpper;
             const isDigit = @import("std").ascii.isDigit;
 
-            for (gameName) |value, index| {
-                var validChar = isUpper(value) or isDigit(value);
+            for (gameName, 0..) |value, index| {
+                const validChar = isUpper(value) or isDigit(value);
 
                 if (validChar and index < 12) {
                     header.gameName[index] = value;
@@ -69,8 +69,8 @@ pub const Header = packed struct {
                 }
             }
 
-            for (gameCode) |value, index| {
-                var validChar = isUpper(value);
+            for (gameCode, 0..) |value, index| {
+                const validChar = isUpper(value);
 
                 if (validChar and index < 4) {
                     header.gameCode[index] = value;
@@ -84,8 +84,8 @@ pub const Header = packed struct {
             }
 
             if (makerCode) |mCode| {
-                for (mCode) |value, index| {
-                    var validChar = isDigit(value);
+                for (mCode, 0..) |value, index| {
+                    const validChar = isDigit(value);
                     if (validChar and index < 2) {
                         header.makerCode[index] = value;
                     } else {
@@ -103,13 +103,13 @@ pub const Header = packed struct {
             var complementCheck: u8 = 0;
             var index: usize = 0xA0;
 
-            const computeCheckData = @as([]const u8, @ptrCast(*[192]u8, &header));
+            const computeCheckData: []const u8 = @as(*[192]u8, @ptrCast(&header));
             while (index < 0xA0 + (0xBD - 0xA0)) : (index += 1) {
                 complementCheck +%= computeCheckData[index];
             }
 
-            var tempCheck = -(0x19 + @intCast(i32, complementCheck));
-            header.complementCheck = @intCast(u8, tempCheck & 0xFF);
+            const tempCheck = -(0x19 + @as(i32, complementCheck));
+            header.complementCheck = tempCheck & 0xFF;
         }
 
         return header;
